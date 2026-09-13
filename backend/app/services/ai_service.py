@@ -71,14 +71,35 @@ class GeminiAnalyzer:
         )
 
     async def generate_recommendation_reason(self, task_title: str, employee_name: str, skills: list, score: float, breakdown: dict) -> str:
-        prompt = f"""
-        Write a 2-3 sentence human-readable explanation of why {employee_name} is recommended for the task "{task_title}".
-        Score: {score}
-        Skills: {skills}
-        Breakdown: {breakdown}
-        """
+        skill_pct = round(breakdown.get('skill_match', 0) * 100)
+        exp_pct = round(breakdown.get('experience', 0) * 100)
+        workload_pct = round(breakdown.get('workload', 0) * 100)
+        avail_pct = round(breakdown.get('availability', 0) * 100)
+        score_pct = round(score * 100)
+
+        prompt = f"""You are an AI assistant helping managers assign tasks to employees.
+
+Task: "{task_title}"
+Recommended Employee: {employee_name}
+Their Skills: {', '.join(skills) if skills else 'General'}
+Overall Match: {score_pct}%
+Skill Match: {skill_pct}%
+Experience Fit: {exp_pct}%
+Workload Availability: {workload_pct}%
+
+Write exactly 2 sentences explaining why {employee_name} is a great fit for this task.
+- Be specific about their skills and availability
+- Sound natural and professional
+- Do NOT mention percentages or scores
+- Do NOT start with the employee name
+- Example tone: "With strong Python and API development skills matching all task requirements, this candidate brings 4 years of relevant experience and currently has bandwidth to take on new work."
+"""
         try:
             response = await self.model.generate_content_async(prompt)
             return response.text.strip()
         except Exception:
-            return f"{employee_name} is recommended for this task with a score of {score}. Skill match: {breakdown.get('skill_match', 0)}, Experience: {breakdown.get('experience', 0)}."
+            return (
+                f"{employee_name} has relevant skills matching this task's requirements "
+                f"with a {score_pct}% overall match. Their current workload allows them "
+                f"to take on this assignment effectively."
+            )

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from app.database import get_db
 from app.models.task import Task
 from app.models.employee import Employee
@@ -25,6 +25,10 @@ async def generate_recommendations(task_id: int, db: AsyncSession = Depends(get_
     task = res_task.scalars().first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Delete old recommendations for this task
+    await db.execute(delete(Recommendation).where(Recommendation.task_id == task_id))
+    await db.flush()
 
     stmt_emp = select(Employee).where(Employee.availability_status != "unavailable")
     res_emp = await db.execute(stmt_emp)
@@ -98,7 +102,7 @@ async def generate_recommendations(task_id: int, db: AsyncSession = Depends(get_
         rec = Recommendation(
             task_id=task.id,
             recommended_employee_id=match.employee_id,
-            match_score=match.total_score,
+            match_score=round(match.total_score, 2),
             confidence_level=match.confidence,
             reason=reason,
             manager_action="pending",

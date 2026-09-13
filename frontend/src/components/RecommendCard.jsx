@@ -41,12 +41,13 @@ const RecommendCard = ({ recommendation, onApprove, onOverride }) => {
           {Object.entries(breakdown).slice(0, 5).map(([key, val]) => (
             <div key={key} className="flex items-center text-sm">
               <span className="w-1/3 truncate text-gray-600 capitalize">{key.replace('_', ' ')}</span>
-              <div className="w-2/3 bg-gray-200 rounded-full h-1.5 ml-2">
+              <div className="w-1/2 bg-gray-200 rounded-full h-1.5 ml-2">
                 <div 
                   className="bg-primary-300 h-1.5 rounded-full" 
-                  style={{ width: `${Math.min(val * 100, 100)}%` }}
+                  style={{ width: `${Math.min(Math.round(val * 100), 100)}%` }}
                 ></div>
               </div>
+              <span className="ml-2 text-xs text-gray-500 w-10 text-right">{Math.round(val * 100)}%</span>
             </div>
           ))}
         </div>
